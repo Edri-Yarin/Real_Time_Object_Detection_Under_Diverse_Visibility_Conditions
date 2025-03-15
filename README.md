@@ -7,6 +7,7 @@ This system will operate as follow - continuous video frames and feeds them into
 <img width="271" alt="image" src="https://github.com/user-attachments/assets/3ddc11f1-d471-4659-9f43-0e11a99bfebf" />
 
 Complete system pipeline output. In the left photo, the visibility condition classification, in the right photo, yolov8 output with fog weights:
+
 <img width="278" alt="image" src="https://github.com/user-attachments/assets/7d900c50-219e-4994-a5bb-18eab49bce26" />
 
 Compared performance of the YOLOv8 model when loaded with weights trained on each specific visibility condition versus weights trained on the combined dataset - 
