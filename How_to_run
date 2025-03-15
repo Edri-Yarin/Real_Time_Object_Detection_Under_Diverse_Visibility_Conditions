@@ -1,0 +1,128 @@
+# Real-Time Object Detection Under Diverse Visibility Conditions
+
+## Overview
+This repository contains a real-time object detection system that adapts dynamically to different visibility conditions. The system uses a lightweight classification model to determine the current visibility condition and selects the appropriate YOLOv8 model for optimized performance.
+
+## System Components
+
+### 1. Visibility Classification Model
+- Determines the current visibility condition (e.g., clear, sand, rain, fog, snow) based on input frames.
+- Runs intermittently to ensure efficiency.
+- Uses MobileNetV3 for classification.
+- Saves trained weights for future inference.
+
+### 2. YOLOv8 Detection Models
+- Separate models trained for different visibility conditions.
+- The system dynamically switches between models based on classification results.
+
+### 3. General YOLOv8 Model
+- A single model trained on all conditions.
+- Used for comparison against condition-specific models.
+
+### 4. System Pipeline
+- Manages the workflow from visibility classification to object detection.
+- Ensures seamless transition between different detection models.
+- Performs model evaluation and visualization.
+
+## Installation
+### Install Dependencies
+To use this system, install the required libraries:
+```bash
+pip install ultralytics xmltodict opencv-python matplotlib scikit-learn torchvision torch pyyaml
+```
+
+If running on Google Colab, mount your Google Drive to access datasets:
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+```
+
+## Dataset Preparation
+Ensure that your dataset is structured correctly:
+- **Images Directory**: Stores all images.
+- **Annotations Directory**: Stores annotation files in Pascal VOC format.
+- **Labels Directory**: Stores converted YOLO format labels.
+- **Annotations CSV**: Stores image-label mappings for classification.
+
+### Convert Annotations to YOLO Format
+The script automatically converts Pascal VOC annotations to YOLO format and extracts class names:
+```python
+CLASS_NAMES = extract_class_names(ANNOTATIONS_PATH)
+convert_voc_to_yolo(xml_file, OUTPUT_LABELS_PATH, CLASS_NAMES)
+```
+
+### Train-Validation Split
+The dataset is split into training and validation sets:
+```python
+train_images, val_images = train_test_split(image_files, test_size=0.2, random_state=42)
+```
+
+## Training YOLOv8 Models
+The YOLOv8 model is trained separately for each visibility condition:
+```python
+model = YOLO('yolov8n.pt')
+model.train(data=os.path.join(DATASET_PATH, "data.yaml"), epochs=30, imgsz=416, batch=16, name="yolov8_sand", workers=2)
+```
+
+## Training the Visibility Classification Model
+The classification model is based on MobileNetV3 and trained on labeled images:
+```python
+model = MobileNetV3VisibilityModel(num_classes=18).to(device)
+train_model(model, train_loader, val_loader, num_epochs=10)
+```
+After training, the model is saved for future inference:
+```python
+torch.save(model.state_dict(), "visibility_classification_model.pth")
+```
+
+## Running Object Detection
+To run inference on new images:
+```python
+results = model.predict(source=image_path, save=False)
+```
+
+## Running Visibility Classification
+To classify the visibility condition of an image:
+```python
+condition = classify_visibility(image_path, model)
+```
+The detected condition determines which YOLOv8 model is used for detection.
+
+## Evaluation and Visualization
+### Evaluate Model Performance
+The system evaluates YOLO models using the validation dataset:
+```python
+evaluate_model_on_dataset(model, yaml_path)
+```
+### Measure Inference Time
+Measure inference time for different models:
+```python
+measure_inference_time(model, image_list)
+```
+### Visualizing Results
+To visualize ground truth annotations:
+```python
+visualize_image_with_labels(image_path, label_path, CLASS_NAMES, title="Ground Truth")
+```
+To visualize model predictions:
+```python
+visualize_image_with_predictions(image_path, results, CLASS_NAMES, title="Model Predictions")
+```
+To compare sub-model vs. general model detections:
+```python
+select_and_visualize_best(condition, images_folder, labels_folder, num_examples=6)
+```
+
+## Exporting the Model
+For deployment, the trained model can be exported:
+```python
+model.export(format='onnx')
+```
+
+## Notes
+- Ensure dataset paths are correctly set before running scripts.
+- The framework is designed for adaptability; new sub-models can be added following the structure of `sand_sub_model.py`.
+- Google Drive integration ensures persistence of trained models across sessions.
+
+
+
